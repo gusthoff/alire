@@ -37,7 +37,7 @@ package body Alire.Publish is
 
    type Data is limited record
       Origin : Origins.Origin := Origins.New_External ("undefined");
-      --  We use external as "undefined" until a proper URL is provided.
+      --  We use external as "undefined" until a proper origin is provided.
 
       Tmp_Deploy_Dir : Directories.Temp_File;
       --  Place to check the sources
@@ -91,7 +91,7 @@ package body Alire.Publish is
 
    procedure Deploy_Sources (Context : in out Data) with
      Pre => Context.Origin.Kind not in Origins.External;
-   --  Extract URL to a temporary location, to compute hash, read user
+   --  Extract origin to a temporary location, to compute hash, read user
    --  manifest and verify buildability.
 
    procedure Deploy_Sources (Context : in out Data) is
@@ -103,7 +103,7 @@ package body Alire.Publish is
 
       Deployer.Fetch  (Context.Tmp_Deploy_Dir.Filename).Assert;
 
-      --  Compute hashes in supported URL kinds (e.g. source archives)
+      --  Compute hashes in supported origin kinds (e.g. source archives)
 
       if Deployer.Supports_Hashing then
          for Kind in Hashes.Kinds loop
@@ -132,7 +132,7 @@ package body Alire.Publish is
 
    procedure Generate_Index_Manifest (Context : in out Data) with
      Pre => GNAT.OS_Lib.Is_Directory (Context.Tmp_Deploy_Dir.Filename);
-   --  Bind the user manifest with the URL TOML object and create the index
+   --  Bind the user manifest with the origin TOML object and create the index
    --  manifest.
 
    procedure Generate_Index_Manifest (Context : in out Data) is
@@ -185,7 +185,7 @@ package body Alire.Publish is
          Ada.Directories.Copy_File (User_Manifest, Index_Manifest);
 
          --  Take the user manifest and bundle it under the proper index
-         --  manifest name with the URL we are being provided with:
+         --  manifest name with the origin we are being provided with:
 
          Open (Index_File, Append_File, Index_Manifest);
          New_Line (Index_File);
@@ -309,7 +309,7 @@ package body Alire.Publish is
    procedure Verify_Origin (Context : in out Data) is
    begin
 
-      --  Ensure the URL is remote
+      --  Ensure the origin is remote
 
       if URI.Scheme
         (case Context.Origin.Kind is
@@ -384,7 +384,7 @@ package body Alire.Publish is
    ----------------------
 
    procedure Local_Repository (Path     : Any_Path := ".";
-                               Revision : String   := "")
+                               Revision : String   := "HEAD")
    is
       Root : constant Roots.Optional.Root := Roots.Optional.Search_Root (Path);
       use all type VCSs.Git.States;
@@ -433,7 +433,7 @@ package body Alire.Publish is
                                  & TTY.Emph (Revision));
          end if;
 
-         Remote_Origin
+         Publish.Remote_Origin
            (URL => Git.Fetch_URL (Root.Value.Path),
             Commit => Commit);
       end;
